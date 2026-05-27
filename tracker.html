@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bus GPS Transmitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; background: #f4f6f9; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; }
+        .data-box { background: #eee; padding: 10px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 1.1em;}
+    </style>
+</head>
+<body>
+    
+    <div class="card">
+        <h2>Driver Transmitter</h2>
+        <h3 id="status" style="color: blue;">Searching for GPS Signal...</h3>
+        
+        <div class="data-box">Lat: <span id="lat">Waiting...</span></div>
+        <div class="data-box">Lng: <span id="lng">Waiting...</span></div>
+    </div>
+
+    <script>
+        // YOUR EXACT FIREBASE CONFIGURATION
+        const firebaseConfig = {
+          apiKey: "AIzaSyAatb2f40CnblZpkLy4SJcWb2ZWQni2kV4",
+          authDomain: "upm-bus-tracker.firebaseapp.com",
+          databaseURL: "https://upm-bus-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "upm-bus-tracker",
+          storageBucket: "upm-bus-tracker.firebasestorage.app",
+          messagingSenderId: "59167545672",
+          appId: "1:59167545672:web:c694bff552a1cc0a56fb7d"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // TAP INTO THE PHONE'S GPS CHIP
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    // Update the screen so the driver knows it is working
+                    document.getElementById('status').innerText = "Transmitting Live";
+                    document.getElementById('status').style.color = "green";
+                    document.getElementById('lat').innerText = lat.toFixed(6);
+                    document.getElementById('lng').innerText = lng.toFixed(6);
+                    
+                    // SEND DATA TO FIREBASE
+                    db.ref('bus_location/upm_bus_1').set({ 
+                        latitude: lat, 
+                        longitude: lng,
+                        timestamp: Date.now()
+                    });
+                }, 
+                (error) => {
+                    document.getElementById('status').innerText = "GPS Error: Please enable location access.";
+                    document.getElementById('status').style.color = "red";
+                }, 
+                { enableHighAccuracy: true, maximumAge: 0 } 
+            );
+        } else {
+            document.getElementById('status').innerText = "Geolocation not supported on this device.";
+            document.getElementById('status').style.color = "red";
+        }
+    </script>
+</body>
+</html>

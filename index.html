@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UPM Campus Live Bus Tracker</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: sans-serif; }
+        #map { height: 100%; width: 100%; position: absolute; z-index: 1; }
+        
+        /* Floating Header for students */
+        .header { 
+            position: absolute; 
+            top: 15px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            z-index: 1000; 
+            background: white; 
+            padding: 12px 25px; 
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            font-weight: bold; 
+            font-size: 16px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">UPM Shuttle Tracker</div>
+    
+    <div id="map"></div>
+
+    <script>
+        // 1. SETUP THE MAP 
+        // Centered roughly on UPM Serdang Campus
+        const upmLat = 2.9998;
+        const upmLng = 101.7121;
+        const map = L.map('map').setView([upmLat, upmLng], 15);
+
+        // Load the free OpenStreetMap tiles (the actual map images)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Create a marker for the bus and place it on the map
+        let busMarker = L.marker([upmLat, upmLng]).addTo(map);
+        busMarker.bindPopup("<b>UPM Bus 1</b><br>Fetching live data...").openPopup();
+
+        // 2. YOUR EXACT FIREBASE CONFIGURATION
+        const firebaseConfig = {
+          apiKey: "AIzaSyAatb2f40CnblZpkLy4SJcWb2ZWQni2kV4",
+          authDomain: "upm-bus-tracker.firebaseapp.com",
+          databaseURL: "https://upm-bus-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "upm-bus-tracker",
+          storageBucket: "upm-bus-tracker.firebasestorage.app",
+          messagingSenderId: "59167545672",
+          appId: "1:59167545672:web:c694bff552a1cc0a56fb7d"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // 3. LISTEN FOR MOVEMENT IN THE DATABASE
+        // This function triggers automatically whenever 'tracker.html' sends new data
+        db.ref('bus_location/upm_bus_1').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Get the new coordinates
+                const liveLat = data.latitude;
+                const liveLng = data.longitude;
+                
+                // Move the marker instantly!
+                busMarker.setLatLng([liveLat, liveLng]);
+                busMarker.getPopup().setContent("<b>UPM Bus 1</b><br>Status: Live Tracking Active");
+                
+                // Optional: Automatically pan the map to follow the bus
+                // map.panTo([liveLat, liveLng]);
+            }
+        });
+    </script>
+</body>
+</html>
