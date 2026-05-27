@@ -70,21 +70,34 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // 3. LISTEN FOR MOVEMENT IN THE DATABASE
-        // This function triggers automatically whenever 'tracker.html' sends new data
+        // 3. LISTEN FOR MOVEMENT (WITH STALE DATA DETECTION)
         db.ref('bus_location/upm_bus_1').on('value', (snapshot) => {
             const data = snapshot.val();
+            
             if (data) {
-                // Get the new coordinates
                 const liveLat = data.latitude;
                 const liveLng = data.longitude;
+                const lastUpdatedTime = data.timestamp;
+                const currentTime = Date.now();
                 
-                // Move the marker instantly!
+                // Calculate how many seconds ago the data was sent
+                const ageInSeconds = (currentTime - lastUpdatedTime) / 1000;
+                
+                // Move the marker to the last known location
                 busMarker.setLatLng([liveLat, liveLng]);
-                busMarker.getPopup().setContent("<b>UPM Bus 1</b><br>Status: Live Tracking Active");
-                
-                // Optional: Automatically pan the map to follow the bus
-                // map.panTo([liveLat, liveLng]);
+
+                // Check if the signal is fresh or dead
+                if (ageInSeconds > 60) {
+                    // If the data is older than 60 seconds, the signal is lost!
+                    busMarker.getPopup().setContent("<b>⚠️ UPM Bus 1</b><br><span style='color:red;'>Signal Lost.</span><br>Last seen " + Math.round(ageInSeconds / 60) + " mins ago.");
+                    
+                    // Optional: You could change the icon color here to gray
+                    busMarker.setOpacity(0.5); 
+                } else {
+                    // Signal is fresh!
+                    busMarker.getPopup().setContent("<b>UPM Bus 1</b><br><span style='color:green;'>● Live Tracking Active</span>");
+                    busMarker.setOpacity(1.0);
+                }
             }
         });
     </script>
