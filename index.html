@@ -100,6 +100,38 @@
                 }
             }
         });
+
+
+// 4. SHOW THE STUDENT'S OWN LOCATION (THE BLUE DOT)
+        if (navigator.geolocation) {
+            let studentMarker = null; // Create an empty variable for the student
+
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    const studentLat = position.coords.latitude;
+                    const studentLng = position.coords.longitude;
+                    
+                    if (!studentMarker) {
+                        // If the dot doesn't exist yet, create a blue dot!
+                        studentMarker = L.circleMarker([studentLat, studentLng], {
+                            color: 'white',      // White border
+                            fillColor: '#007bff', // Blue center
+                            fillOpacity: 1,
+                            radius: 8,
+                            weight: 2
+                        }).addTo(map);
+                        studentMarker.bindPopup("<b>You are here</b>");
+                    } else {
+                        // If the dot exists, just move it to the new location
+                        studentMarker.setLatLng([studentLat, studentLng]);
+                    }
+                }, 
+                (error) => {
+                    console.log("Student denied location access.");
+                }, 
+                { enableHighAccuracy: true, maximumAge: 10000 }
+            );
+        }
     </script>
 </body>
 </html>
